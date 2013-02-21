@@ -706,8 +706,8 @@ namespace Jack
             return;
         }
 
-        //socket
-        if (fSocket.NewSocket() == SOCKET_ERROR) {
+        //socket: we need to have socket probed first if we want to use multicast
+        if (fSocket.NewSocket(fMulticastIP) == SOCKET_ERROR) {
             jack_error("Can't create NetManager input socket : %s", StrError(NET_ERROR_CODE));
             return;
         }
