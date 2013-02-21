@@ -608,7 +608,7 @@ namespace Jack
             jack_driver_descriptor_add_parameter(desc, &filler, "multicast-ip", 'a', JackDriverParamString, &value, NULL, "Multicast address, or explicit IP of the master", NULL);
 
 	    strcpy(value.str, DEFAULT_MULTICAST_IF);
-	    jack_driver_descriptor_add_parameter(desc, &filler, "multicast-if", 'f', JackDriverParamString, &value, NULL, "Multicast interface name, any or all", "Multicast interface to send probes from (any - kernel chosen (default), all - all available, if_name - explicit bind)");
+	    jack_driver_descriptor_add_parameter(desc, &filler, "multicast-if", 'f', JackDriverParamString, &value, NULL, "Multicast interface name or any", "Multicast interface to send probes from (any - kernel chosen (default), if_name - send from specified interface)");
 
             value.i = DEFAULT_PORT;
             jack_driver_descriptor_add_parameter(desc, &filler, "udp-net-port", 'p', JackDriverParamInt, &value, NULL, "UDP port", NULL);
