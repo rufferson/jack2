@@ -234,6 +234,27 @@ namespace Jack
         fNetTimeMon = NULL;
 #endif
     }
+    
+    void JackNetDriver::UpdateLatencies()
+    {
+        jack_latency_range_t input_range;
+        jack_latency_range_t output_range;
+        jack_latency_range_t monitor_range;
+
+        for (int i = 0; i < fCaptureChannels; i++) {
+            input_range.max = input_range.min = 0;
+            fGraphManager->GetPort(fCapturePortList[i])->SetLatencyRange(JackCaptureLatency, &input_range);
+        }
+
+        for (int i = 0; i < fPlaybackChannels; i++) {
+            output_range.max = output_range.min = 0;
+            fGraphManager->GetPort(fPlaybackPortList[i])->SetLatencyRange(JackPlaybackLatency, &output_range);
+            if (fWithMonitorPorts) {
+                monitor_range.min = monitor_range.max = 0;
+                fGraphManager->GetPort(fMonitorPortList[i])->SetLatencyRange(JackCaptureLatency, &monitor_range);
+            }
+        }
+    }
 
 //jack ports and buffers--------------------------------------------------------------
     int JackNetDriver::AllocPorts()
@@ -255,8 +276,7 @@ namespace Jack
         char alias[REAL_JACK_PORT_NAME_SIZE];
         int audio_port_index;
         int midi_port_index;
-        jack_latency_range_t range;
-
+     
         //audio
         for (audio_port_index = 0; audio_port_index < fCaptureChannels; audio_port_index++) {
             snprintf(alias, sizeof(alias), "%s:%s:out%d", fAliasName, fCaptureDriverName, audio_port_index + 1);
@@ -267,11 +287,8 @@ namespace Jack
                 return -1;
             }
 
-            //port latency
             port = fGraphManager->GetPort(port_index);
             port->SetAlias(alias);
-            range.min = range.max = fEngineControl->fBufferSize;
-            port->SetLatencyRange(JackCaptureLatency, &range);
             fCapturePortList[audio_port_index] = port_index;
             jack_log("JackNetDriver::AllocPorts() fCapturePortList[%d] audio_port_index = %ld fPortLatency = %ld", audio_port_index, port_index, port->GetLatency());
         }
@@ -285,11 +302,8 @@ namespace Jack
                 return -1;
             }
 
-            //port latency
             port = fGraphManager->GetPort(port_index);
             port->SetAlias(alias);
-            range.min = range.max = (fParams.fNetworkLatency * fEngineControl->fBufferSize + ((fEngineControl->fSyncMode) ? 0 : fEngineControl->fBufferSize));
-            port->SetLatencyRange(JackPlaybackLatency, &range);
             fPlaybackPortList[audio_port_index] = port_index;
             jack_log("JackNetDriver::AllocPorts() fPlaybackPortList[%d] audio_port_index = %ld fPortLatency = %ld", audio_port_index, port_index, port->GetLatency());
         }
@@ -304,10 +318,7 @@ namespace Jack
                 return -1;
             }
 
-            //port latency
             port = fGraphManager->GetPort(port_index);
-            range.min = range.max = fEngineControl->fBufferSize;
-            port->SetLatencyRange(JackCaptureLatency, &range);
             fMidiCapturePortList[midi_port_index] = port_index;
             jack_log("JackNetDriver::AllocPorts() fMidiCapturePortList[%d] midi_port_index = %ld fPortLatency = %ld", midi_port_index, port_index, port->GetLatency());
         }
@@ -321,10 +332,7 @@ namespace Jack
                 return -1;
             }
 
-            //port latency
             port = fGraphManager->GetPort(port_index);
-            range.min = range.max = (fParams.fNetworkLatency * fEngineControl->fBufferSize + ((fEngineControl->fSyncMode) ? 0 : fEngineControl->fBufferSize));
-            port->SetLatencyRange(JackPlaybackLatency, &range);
             fMidiPlaybackPortList[midi_port_index] = port_index;
             jack_log("JackNetDriver::AllocPorts() fMidiPlaybackPortList[%d] midi_port_index = %ld fPortLatency = %ld", midi_port_index, port_index, port->GetLatency());
         }
