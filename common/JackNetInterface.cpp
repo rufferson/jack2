@@ -427,7 +427,7 @@ namespace Jack
         if (((rx_bytes = fSocket.Recv(fRxBuffer, size, flags)) == SOCKET_ERROR) && fRunning) {
             FatalRecvError();
         }
-
+  
         packet_header_t* header = reinterpret_cast<packet_header_t*>(fRxBuffer);
         PacketHeaderNToH(header, header);
         return rx_bytes;
@@ -486,8 +486,13 @@ namespace Jack
                 return SOCKET_ERROR;
             }
         }
-        while ((strcmp(rx_head->fPacketType, "header") != 0) && (rx_head->fDataType != 's'));
-
+        while (strcmp(rx_head->fPacketType, "header") != 0);
+        
+        if (rx_head->fDataType != 's') {
+            jack_error("Wrong packet type : %c\n", rx_head->fDataType);
+            return -1;
+        }
+    
         fCurrentCycleOffset = fTxHeader.fCycle - rx_head->fCycle;
 
         if (fCurrentCycleOffset < fMaxCycleOffset) {
@@ -542,7 +547,9 @@ namespace Jack
         // This method contains every step of sync packet informations coding
         // first of all, clear sync packet
         memset(fTxData, 0, PACKET_AVAILABLE_SIZE(&fParams));
-
+    
+        // Transport not used for now...
+        /*
         // then, first step : transport
         if (fParams.fTransportSync) {
             EncodeTransportData();
@@ -552,9 +559,8 @@ namespace Jack
         }
         // then others (freewheel etc.)
         // ...
-
-        // Transport not used for now...
-
+        */
+   
         // Write active ports list
         fTxHeader.fActivePorts = (fNetAudioPlaybackBuffer) ? fNetAudioPlaybackBuffer->ActivePortsToNetwork(fTxData) : 0;
     }
@@ -562,6 +568,9 @@ namespace Jack
     void JackNetMasterInterface::DecodeSyncPacket()
     {
         // This method contains every step of sync packet informations decoding process
+        
+        // Transport not used for now...
+        /*
         // first : transport
         if (fParams.fTransportSync) {
             // copy received transport data to transport data structure
@@ -571,8 +580,8 @@ namespace Jack
         }
         // then others
         // ...
-
-        // Transport not used for now...
+        */
+       
         packet_header_t* rx_head = reinterpret_cast<packet_header_t*>(fRxBuffer);
 
         // Read active ports list
@@ -869,8 +878,13 @@ namespace Jack
                 return rx_bytes;
             }
         }
-        while ((strcmp(rx_head->fPacketType, "header") != 0) && (rx_head->fDataType != 's'));
-
+        while (strcmp(rx_head->fPacketType, "header") != 0);
+        
+        if (rx_head->fDataType != 's') {
+            jack_error("Wrong packet type : %c\n", rx_head->fDataType);
+            return -1;
+        }
+     
         fRxHeader.fIsLastPckt = rx_head->fIsLastPckt;
         
         SetRcvTimeOut();
@@ -949,6 +963,8 @@ namespace Jack
         memset(fTxData, 0, PACKET_AVAILABLE_SIZE(&fParams));
 
         // then first step : transport
+        // Transport is not used for now...
+        /*
         if (fParams.fTransportSync) {
             EncodeTransportData();
             TransportDataHToN(&fReturnTransportData, &fReturnTransportData);
@@ -957,8 +973,7 @@ namespace Jack
         }
         // then others
         // ...
-
-        // Transport is not used for now...
+        */
 
         // Write active ports list
         fTxHeader.fActivePorts = (fNetAudioCaptureBuffer) ? fNetAudioCaptureBuffer->ActivePortsToNetwork(fTxData) : 0;
@@ -967,6 +982,9 @@ namespace Jack
     void JackNetSlaveInterface::DecodeSyncPacket()
     {
         // This method contains every step of sync packet informations decoding process
+        
+        // Transport not used for now...
+        /*
         // first : transport
         if (fParams.fTransportSync) {
             // copy received transport data to transport data structure
@@ -976,8 +994,8 @@ namespace Jack
         }
         // then others
         // ...
-
-        // Transport not used for now...
+        */
+       
         packet_header_t* rx_head = reinterpret_cast<packet_header_t*>(fRxBuffer);
 
         // Read active ports list
