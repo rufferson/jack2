@@ -658,7 +658,7 @@ Deactivated for now..
         SERVER_EXPORT Jack::JackDriverClientInterface* driver_initialize(Jack::JackLockedEngine* engine, Jack::JackSynchro* table, const JSList* params)
         {
             char multicast_ip[32],multicast_if[32];
-            char net_name[JACK_CLIENT_NAME_SIZE + 1];
+            char net_name[JACK_CLIENT_NAME_SIZE + 1] = {0};
             int udp_port;
             int mtu = DEFAULT_MTU;
             // Desactivated for now...
@@ -676,26 +676,18 @@ Deactivated for now..
             const JSList* node;
             const jack_driver_param_t* param;
 
-            net_name[0] = 0;
-
-            // Possibly use env variable
+            // Possibly use env variable for UDP port
             const char* default_udp_port = getenv("JACK_NETJACK_PORT");
             udp_port = (default_udp_port) ? atoi(default_udp_port) : DEFAULT_PORT;
 
+            // Possibly use env variable for multicast IP
             const char* default_multicast_ip = getenv("JACK_NETJACK_MULTICAST");
-            if (default_multicast_ip) {
-                strcpy(multicast_ip, default_multicast_ip);
-            } else {
-                strcpy(multicast_ip, DEFAULT_MULTICAST_IP);
-            }
+            strcpy(multicast_ip, (default_multicast_ip) ? default_multicast_ip : DEFAULT_MULTICAST_IP);
 
+	    // Possibly use env variable for multicast interface
             const char* default_multicast_if = getenv("JACK_NETJACK_INTERFACE");
-            if (default_multicast_ip) {
-                strcpy(multicast_if, default_multicast_if);
-            } else {
-                strcpy(multicast_if, DEFAULT_MULTICAST_IF);
-            }
-
+            strcpy(multicast_if, (default_multicast_if) ? default_multicast_if : DEFAULT_MULTICAST_IF);
+         
             for (node = params; node; node = jack_slist_next(node)) {
                 param = (const jack_driver_param_t*) node->data;
                 switch (param->character)
