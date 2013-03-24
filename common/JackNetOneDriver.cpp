@@ -422,11 +422,11 @@ int JackNetOneDriver::Write()
         static const int flag = 0;
 
         if (netj.reply_port)
-            netj.syncsource_address.sin_port = htons(netj.reply_port);
+            netj.syncsource_address.sin6_port = htons(netj.reply_port);
 
         for (r = 0; r < netj.redundancy; r++)
             netjack_sendto(netj.sockfd, (char *)packet_buf, packet_size,
-                           flag, (struct sockaddr*) & (netj.syncsource_address), sizeof(struct sockaddr_in), netj.mtu);
+                           flag, (struct sockaddr*) & (netj.syncsource_address), sizeof(netj.syncsource_address), netj.mtu);
     }
     return 0;
 }

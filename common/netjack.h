@@ -83,7 +83,7 @@ extern "C"
         int		    outsockfd;
 #endif
 
-        struct sockaddr_in syncsource_address;
+        struct sockaddr_in6 syncsource_address;
 
         int		    reply_port;
         int		    srcaddress_valid;

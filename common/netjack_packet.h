@@ -95,7 +95,7 @@ extern "C"
         int size;
         cache_packet *packets;
         int mtu;
-        struct sockaddr_in master_address;
+        struct sockaddr_in6 master_address;
         int master_address_valid;
         jack_nframes_t last_framecnt_retreived;
         int last_framecnt_retreived_valid;

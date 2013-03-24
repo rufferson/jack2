@@ -129,7 +129,7 @@ int netjack_wait( netjack_driver_state_t *netj )
     // check if we know who to send our packets too.
     if (!netj->srcaddress_valid)
         if( netj->packcache->master_address_valid ) {
-            memcpy (&(netj->syncsource_address), &(netj->packcache->master_address), sizeof( struct sockaddr_in ) );
+            memcpy (&(netj->syncsource_address), &(netj->packcache->master_address), sizeof( netj->syncsource_address ) );
             netj->srcaddress_valid = 1;
         }
 
@@ -339,11 +339,11 @@ void netjack_send_silence( netjack_driver_state_t *netj, int syncstate )
     if (netj->srcaddress_valid) {
         int r;
         if (netj->reply_port)
-            netj->syncsource_address.sin_port = htons(netj->reply_port);
+            netj->syncsource_address.sin6_port = htons(netj->reply_port);
 
         for( r = 0; r < netj->redundancy; r++ )
             netjack_sendto(netj->outsockfd, (char *)packet_buf, tx_size,
-                           0, (struct sockaddr*) & (netj->syncsource_address), sizeof(struct sockaddr_in), netj->mtu);
+                           0, (struct sockaddr*) & (netj->syncsource_address), sizeof(netj->syncsource_address), netj->mtu);
     }
 }
 
@@ -654,37 +654,39 @@ void netjack_release( netjack_driver_state_t *netj )
     netj->packcache = NULL;
 }
 
+#if !defined(WIN32) && !defined(INVALID_SOCKET)
+#define INVALID_SOCKET -1
+#endif
 int
 netjack_startup( netjack_driver_state_t *netj )
 {
-    int first_pack_len;
-    struct sockaddr_in address;
+    int first_pack_len, af=AF_INET6;
+    struct sockaddr_in6 address;
     // Now open the socket, and wait for the first packet to arrive...
-    netj->sockfd = socket (AF_INET, SOCK_DGRAM, 0);
-#ifdef WIN32
-    if (netj->sockfd == INVALID_SOCKET)
-#else
-    if (netj->sockfd == -1)
-#endif
-    {
-        jack_info ("socket error");
-        return -1;
+    netj->sockfd = socket (af, SOCK_DGRAM, 0);
+    if(netj->sockfd != INVALID_SOCKET) {
+	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+    } else if(errno == EAFNOSUPPORT) {
+	af = AF_INET;
+	netj->sockfd = socket (af, SOCK_DGRAM, 0);
+	if (netj->sockfd == INVALID_SOCKET) {
+	    jack_info ("socket error");
+	    return -1;
+	}
+	(*(struct sockaddr_in*)&address).sin_addr.s_addr = htonl(INADDR_ANY);
+    } else {
+	jack_info ("socket error");
+	return -1;
     }
-    address.sin_family = AF_INET;
-    address.sin_port = htons(netj->listen_port);
-    address.sin_addr.s_addr = htonl(INADDR_ANY);
+    address.sin6_family = af;
+    address.sin6_port = htons(netj->listen_port);
     if (bind (netj->sockfd, (struct sockaddr *) &address, sizeof (address)) < 0) {
         jack_info("bind error");
         return -1;
     }
 
-    netj->outsockfd = socket (AF_INET, SOCK_DGRAM, 0);
-#ifdef WIN32
-    if (netj->outsockfd == INVALID_SOCKET)
-#else
-    if (netj->outsockfd == -1)
-#endif
-    {
+    netj->outsockfd = socket (af, SOCK_DGRAM, 0);
+    if (netj->outsockfd == INVALID_SOCKET) {
         jack_info ("socket error");
         return -1;
     }
@@ -692,9 +694,9 @@ netjack_startup( netjack_driver_state_t *netj )
     if (netj->use_autoconfig) {
         jacknet_packet_header *first_packet = alloca (sizeof (jacknet_packet_header));
 #ifdef WIN32
-        int address_size = sizeof( struct sockaddr_in );
+        int address_size = sizeof( netj->syncsource_address );
 #else
-        socklen_t address_size = sizeof (struct sockaddr_in);
+        socklen_t address_size = sizeof ( netj->syncsource_address );
 #endif
         //jack_info ("Waiting for an incoming packet !!!");
         //jack_info ("*** IMPORTANT *** Dont connect a client to jackd until the driver is attached to a clock source !!!");
